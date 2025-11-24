@@ -1,5 +1,6 @@
 const int pir_pin = 2;
 const int hall_pin =3;
+const int mmwave_pin = 4;
 const int led_pin = 13;
 
 enum system_state{
@@ -24,6 +25,7 @@ const unsigned long preoff_duration = 10000;//10 secs of waiting for pir
 void setup(){
   pinMode(pir_pin, INPUT);
   pinMode(hall_pin, INPUT);
+  pinMode(mmwave_pin,INPUT);
   pinMode(led_pin, OUTPUT);
 
   Serial.begin(9600);
@@ -81,8 +83,8 @@ void loop(){
     digitalWrite(led_pin, (millis() / 500) % 2); //blinking led
     Serial.println("PIR check in pre_off");
 
-    if(digitalRead(pir_pin)==HIGH){
-        Serial.println("PIR motion detected - monitoring starts again");
+    if(digitalRead(pir_pin)==HIGH || digitalRead(mmwave_pin)==HIGH){
+        Serial.println("PIR or mmWave motion detected - monitoring starts again");
         current_state = monitor;
         delay(200);
         break;
@@ -92,7 +94,7 @@ void loop(){
       }
     
    if (millis() - preoff_start >= preoff_duration) {
-        Serial.println("No PIR motion detected for 10 secs");
+        Serial.println("No motion detected for 10 secs");
         current_state = disabled;
       }
 
