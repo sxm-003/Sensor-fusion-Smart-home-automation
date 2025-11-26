@@ -3,7 +3,6 @@ const int hall_pin =3;
 const int mmwave_pin = 4;
 const int led_pin = 13;
 
-// *** CHOOSE A REALISTIC THRESHOLD AFTER TESTING ***
 const int LIGHT_THRESHOLD = 5; 
 
 enum system_state{
