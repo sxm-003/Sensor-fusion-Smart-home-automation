@@ -29,7 +29,7 @@ void setup(){
   pinMode(led_pin, OUTPUT);
 
   Serial.begin(9600);
-  Serial.println("START...")
+  Serial.println("START...");
 
 }
 
@@ -64,6 +64,10 @@ bool checkHallSequence() {
 }
 
 void loop(){
+  int light_value = analogRead(A0);
+  if (light_value <= 5) {
+    system_state = disabled;
+  }
   switch (current_state) {
 
     case monitor:
