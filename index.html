@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>S.E.N.T.R.Y. Interface</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg-color: #0b0c10;
+        --card-bg: #1f2833;
+        --text-main: #c5c6c7;
+        --neon-blue: #45a29e;
+        --neon-green: #66fcf1;
+        --neon-red: #ff4b5c;
+        --neon-amber: #ffa600;
+      }
+
+      body {
+        background-color: var(--bg-color);
+        color: var(--text-main);
+        font-family: 'Roboto Mono', monospace;
+        margin: 0;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      /* --- Header --- */
+      header {
+        width: 100%;
+        max-width: 1000px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid var(--neon-blue);
+        padding-bottom: 10px;
+        margin-bottom: 30px;
+      }
+
+      h1 {
+        font-family: 'Orbitron', sans-serif;
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        color: var(--neon-green);
+        text-shadow: 0 0 10px rgba(102, 252, 241, 0.5);
+      }
+
+      .connection-status {
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: #333;
+      }
+      .status-dot.connected {
+        background-color: var(--neon-green);
+        box-shadow: 0 0 10px var(--neon-green);
+      }
+      .status-dot.disconnected {
+        background-color: var(--neon-red);
+        box-shadow: 0 0 10px var(--neon-red);
+      }
+
+      /* --- Grid Layout --- */
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto 1fr;
+        gap: 20px;
+        width: 100%;
+        max-width: 1000px;
+        height: 100%;
+      }
+
+      /* --- Cards --- */
+      .card {
+        background: var(--card-bg);
+        border-radius: 5px;
+        padding: 20px;
+        border-left: 4px solid var(--neon-blue);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+      }
+
+      .card-label {
+        font-size: 0.75rem;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 10px;
+      }
+
+      .card-value {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 2rem;
+        font-weight: 700;
+      }
+
+      /* --- Main Status Card --- */
+      .status-card {
+        grid-column: 1 / -1;
+        text-align: center;
+        border-left: none;
+        border-top: 4px solid var(--neon-blue);
+        transition: border-color 0.5s, box-shadow 0.5s;
+      }
+
+      .status-big {
+        font-size: 3rem;
+        margin: 10px 0;
+        text-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+      }
+      .status-implication {
+        font-size: 1rem;
+        color: var(--neon-blue);
+      }
+
+      /* --- Light Sensor --- */
+      .light-bar-container {
+        width: 100%;
+        height: 10px;
+        background: #111;
+        margin-top: 15px;
+        border-radius: 5px;
+        overflow: hidden;
+      }
+      .light-bar {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, var(--neon-blue), var(--neon-green));
+        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      /* --- Sensor Types --- */
+      .sensor-row {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 10px;
+      }
+      .sensor-indi {
+        font-size: 0.8rem;
+        color: #555;
+        font-weight: bold;
+        padding: 5px 10px;
+        border-radius: 4px;
+        border: 1px solid #333;
+        transition: all 0.2s;
+      }
+
+      .sensor-indi.active-pir {
+        color: #fff;
+        background: rgba(255, 75, 92, 0.2);
+        border-color: var(--neon-red);
+        box-shadow: 0 0 10px var(--neon-red);
+      }
+      .sensor-indi.active-mm {
+        color: #fff;
+        background: rgba(255, 166, 0, 0.2);
+        border-color: var(--neon-amber);
+        box-shadow: 0 0 10px var(--neon-amber);
+      }
+
+      /* --- Console --- */
+      .console-card {
+        grid-column: 1 / -1;
+        background: #000;
+        border: 1px solid #333;
+        font-family: 'Courier New', Courier, monospace;
+        overflow-y: auto;
+        padding: 15px;
+        display: flex;
+        flex-direction: column-reverse;
+        border-radius: 5px;
+        max-height: 250px;
+      }
+
+      .log-entry {
+        margin-bottom: 4px;
+        font-size: 0.85rem;
+        border-bottom: 1px solid #1a1a1a;
+        padding-bottom: 2px;
+      }
+      .log-time {
+        color: #555;
+        margin-right: 10px;
+      }
+      .log-alert {
+        color: var(--neon-amber);
+      }
+      .log-success {
+        color: var(--neon-green);
+      }
+      .log-danger {
+        color: var(--neon-red);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>
+        S.E.N.T.R.Y.
+        <span style="font-size: 0.5em; color: #666">Room Logic Core</span>
+      </h1>
+      <div class="connection-status">
+        <span id="conn-text">OFFLINE</span>
+        <div id="conn-dot" class="status-dot"></div>
+      </div>
+    </header>
+
+    <div class="dashboard-grid">
+      <!-- MAIN STATUS -->
+      <div class="card status-card" id="main-card">
+        <div class="card-label">SYSTEM STATE</div>
+        <div class="card-value status-big" id="system-state">
+          INITIALIZING...
+        </div>
+        <div class="status-implication" id="implication-text">
+          Waiting for data stream
+        </div>
+      </div>
+
+      <!-- LIGHT DATA -->
+      <div class="card">
+        <div class="card-label">AMBIENT LIGHT SENSOR</div>
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: end;
+          "
+        >
+          <div class="card-value" id="light-val">--</div>
+          <div style="font-size: 0.8rem; color: #666">RAW VAL</div>
+        </div>
+        <div class="light-bar-container">
+          <div class="light-bar" id="light-bar-visual"></div>
+        </div>
+      </div>
+
+      <!-- SENSORS / DOOR -->
+      <div class="card">
+        <div class="card-label">ACTIVITY MONITOR</div>
+
+        <div style="margin-top: 5px">
+          <div style="font-size: 0.9rem">DOOR SEQUENCE:</div>
+          <div
+            class="card-value"
+            id="door-status"
+            style="font-size: 1.2rem; color: var(--neon-blue)"
+          >
+            READY
+          </div>
+        </div>
+
+        <div
+          style="
+            margin-top: 15px;
+            border-top: 1px solid #333;
+            padding-top: 10px;
+          "
+        >
+          <div style="font-size: 0.9rem">MOTION SENSORS:</div>
+          <div class="sensor-row">
+            <span id="pir-indi" class="sensor-indi">PIR (HEAT)</span>
+            <span id="mm-indi" class="sensor-indi">RADAR (mmWave)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- TERMINAL -->
+      <div class="console-card" id="console-output"></div>
+    </div>
+
+    <script>
+      const socket = io('http://localhost:3000');
+
+      // UI Elements
+      const stateText = document.getElementById('system-state');
+      const impText = document.getElementById('implication-text');
+      const mainCard = document.getElementById('main-card');
+      const lightVal = document.getElementById('light-val');
+      const lightBar = document.getElementById('light-bar-visual');
+      const doorText = document.getElementById('door-status');
+      const pirIndi = document.getElementById('pir-indi');
+      const mmIndi = document.getElementById('mm-indi');
+      const consoleOut = document.getElementById('console-output');
+      const connDot = document.getElementById('conn-dot');
+      const connText = document.getElementById('conn-text');
+
+      // State Styling Config
+      const stateConfig = {
+        IDLE: {
+          color: '#66fcf1',
+          border: '#66fcf1',
+          imp: 'System Sleeping. Waiting for Light.',
+        },
+        MONITOR: {
+          color: '#45a29e',
+          border: '#45a29e',
+          imp: 'System Armed. Tracking Door Logic.',
+        },
+        'PRE-OFF': {
+          color: '#ffa600',
+          border: '#ffa600',
+          imp: 'TIMER ACTIVE. EXITING OR STAY STILL.',
+        },
+        DISABLED: {
+          color: '#ff4b5c',
+          border: '#ff4b5c',
+          imp: 'SYSTEM OFF. Room Vacant.',
+        },
+      };
+
+      socket.on('connect', () => {
+        connDot.classList.add('connected');
+        connDot.classList.remove('disconnected');
+        connText.innerText = 'ONLINE';
+        addLog('System connected to WebSocket Bridge.', 'log-success');
+      });
+
+      socket.on('disconnect', () => {
+        connDot.classList.remove('connected');
+        connDot.classList.add('disconnected');
+        connText.innerText = 'OFFLINE';
+        addLog('Connection lost.', 'log-danger');
+      });
+
+      socket.on('arduino-data', (data) => {
+        const raw = data.raw;
+        // Filter out telemetry from console logs to keep it clean
+        if (!raw.includes('TELEMETRY')) {
+          addLog(raw, determineLogClass(raw));
+        }
+        parseArduinoData(raw);
+      });
+
+      function parseArduinoData(text) {
+        // 1. LIGHT TELEMETRY
+        if (text.includes('TELEMETRY|LIGHT:')) {
+          const val = parseInt(text.split(':')[1]);
+          lightVal.innerText = val;
+          const pct = Math.min((val / 100) * 100, 100);
+          lightBar.style.width = pct + '%';
+        }
+
+        // 2. STATES & FALLBACKS (Supports old and new logs)
+        if (
+          text.includes('HIGH_LIGHT_DETECTED') ||
+          text.includes('Monitor state')
+        )
+          updateState('MONITOR');
+        if (
+          text.includes('LOW_LIGHT_DETECTED') ||
+          text.includes('Returning to Idle')
+        )
+          updateState('IDLE');
+        if (
+          text.includes('RESET_TO_IDLE') ||
+          text.includes('Resetting to Idle')
+        )
+          updateState('IDLE');
+        if (
+          text.includes('DOOR_TRIGGER_ACTIVATED') ||
+          text.includes('Hall trigger sequence')
+        )
+          updateState('PRE-OFF');
+        if (text.includes('TIMER_EXPIRED') || text.includes('Disabling system'))
+          updateState('DISABLED');
+
+        // 3. MOTION SOURCES
+        if (text.includes('MOTION_STOP')) {
+          if (text.includes('PIR') || text.includes('BOTH'))
+            triggerVisual(pirIndi, 'active-pir');
+          if (text.includes('MMWAVE') || text.includes('BOTH'))
+            triggerVisual(mmIndi, 'active-mm');
+          updateState('MONITOR');
+        }
+        // Fallback for old code
+        else if (text.includes('Motion detected')) {
+          triggerVisual(pirIndi, 'active-pir'); // Assume PIR if unspecified
+          updateState('MONITOR');
+        }
+
+        // 4. DOOR LOGIC
+        if (text.includes('MAGNET_DETECTED')) doorText.innerText = 'OPENING...';
+        if (text.includes('OPENED')) doorText.innerText = 'OPEN';
+        if (
+          text.includes('DOOR_TRIGGER_ACTIVATED') ||
+          text.includes('TRIGGERING')
+        ) {
+          doorText.innerText = 'LATCHED';
+          doorText.style.color = 'var(--neon-amber)';
+          setTimeout(() => {
+            doorText.innerText = 'READY';
+            doorText.style.color = 'var(--neon-blue)';
+          }, 3000);
+        }
+      }
+
+      function updateState(stateKey) {
+        const cfg = stateConfig[stateKey];
+        if (!cfg) return;
+
+        stateText.innerText = stateKey;
+        stateText.style.color = cfg.color;
+        impText.innerText = cfg.imp;
+        impText.style.color = cfg.color;
+        mainCard.style.borderTopColor = cfg.border;
+        mainCard.style.boxShadow = `0 0 20px ${cfg.border}40`;
+      }
+
+      function triggerVisual(element, className) {
+        element.classList.add(className);
+        setTimeout(() => {
+          element.classList.remove(className);
+        }, 1000);
+      }
+
+      function addLog(msg, cssClass) {
+        const div = document.createElement('div');
+        div.className = `log-entry ${cssClass || ''}`;
+        const time = new Date().toLocaleTimeString().split(' ')[0];
+        div.innerHTML = `<span class="log-time">[${time}]</span> ${msg}`;
+        consoleOut.prepend(div);
+      }
+
+      function determineLogClass(txt) {
+        if (txt.includes('TRIGGER') || txt.includes('Pre-off'))
+          return 'log-alert';
+        if (txt.includes('DISABLED') || txt.includes('TIMER'))
+          return 'log-danger';
+        if (txt.includes('MONITOR')) return 'log-success';
+        return 'log-info';
+      }
+    </script>
+  </body>
+</html>
